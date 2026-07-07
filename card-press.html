@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card Press — Digital Business Card Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#1c1b1a;
+    --panel:#232220;
+    --panel-2:#2a2926;
+    --line:#3c3a36;
+    --paper:#efeae1;
+    --paper-line:#d7d0bf;
+    --red:#c1121f;
+    --red-dim:#8f0e17;
+    --brass:#b08d57;
+    --text-hi:#f5f2ea;
+    --text-lo:#a39d90;
+    --ink-text:#211f1c;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text-hi);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--red);color:#fff;}
+
+  /* ---------- layout shell ---------- */
+  .studio{
+    display:flex;
+    flex-direction:column;
+    min-height:100vh;
+  }
+  .studio-header{
+    padding:22px 28px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .studio-header .mark{
+    width:34px;height:34px;border:1.5px solid var(--red);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--red);
+    transform:rotate(45deg);
+    flex:none;
+  }
+  .studio-header .mark span{transform:rotate(-45deg);}
+  .studio-header h1{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    font-size:22px;
+    margin:0;
+    letter-spacing:0.01em;
+  }
+  .studio-header .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-lo);
+  }
+
+  .workspace{
+    flex:1;
+    display:grid;
+    grid-template-columns:360px 1fr;
+  }
+  @media (max-width: 880px){
+    .workspace{grid-template-columns:1fr;}
+  }
+
+  /* ---------- left panel ---------- */
+  .panel{
+    background:var(--panel);
+    border-right:1px solid var(--line);
+    padding:26px 24px 60px;
+    overflow-y:auto;
+    max-height:calc(100vh - 78px);
+  }
+  @media (max-width:880px){ .panel{max-height:none;border-right:none;border-bottom:1px solid var(--line);} }
+
+  .field-group{margin-bottom:22px;}
+  .field-group h3{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin:0 0 12px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--line);
+  }
+  label{
+    display:block;
+    font-size:11.5px;
+    color:var(--text-lo);
+    margin-bottom:5px;
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.02em;
+  }
+  .row{margin-bottom:13px;}
+  .row.two{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  input[type=text],input[type=email],input[type=tel],input[type=url]{
+    width:100%;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    color:var(--text-hi);
+    padding:9px 10px;
+    font-family:'Inter',sans-serif;
+    font-size:13.5px;
+    border-radius:2px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  input:focus{border-color:var(--red);}
+  input::placeholder{color:#5c5850;}
+
+  .photo-row{display:flex;align-items:center;gap:12px;}
+  .photo-preview{
+    width:52px;height:52px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--line);
+    background-size:cover;background-position:center;
+    flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;color:var(--text-lo);font-size:18px;
+  }
+  .btn-ghost{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;letter-spacing:0.06em;text-transform:uppercase;
+    background:transparent;border:1px solid var(--line);color:var(--text-hi);
+    padding:8px 12px;cursor:pointer;border-radius:2px;
+    transition:border-color .15s,color .15s;
+  }
+  .btn-ghost:hover{border-color:var(--red);color:var(--red);}
+  .btn-ghost.tiny{padding:5px 8px;font-size:10px;}
+  input[type=file]{display:none;}
+
+  .social-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .social-badge{
+    width:28px;height:28px;border-radius:50%;
+    border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10px;color:var(--text-lo);
+    flex:none;
+  }
+
+  /* template picker */
+  .tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tpl-swatch{
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    padding:10px 8px;
+    cursor:pointer;
+    text-align:left;
+    border-radius:2px;
+    transition:border-color .15s;
+  }
+  .tpl-swatch.active{border-color:var(--red);}
+  .tpl-swatch .mini{
+    width:100%;height:34px;border-radius:1px;margin-bottom:8px;
+    position:relative;overflow:hidden;
+  }
+  .tpl-swatch .name{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;letter-spacing:0.03em;color:var(--text-hi);
+  }
+  .mini-ink{background:var(--paper);}
+  .mini-ink::after{content:'';position:absolute;left:50%;top:14px;transform:translateX(-50%);width:60%;height:2px;background:var(--ink);}
+  .mini-grid{background:var(--paper);display:flex;}
+  .mini-grid::before{content:'';width:38%;height:100%;background:var(--ink);}
+  .mini-block{background:var(--paper);display:flex;justify-content:flex-end;}
+  .mini-block::before{content:'';width:45%;height:100%;background:var(--red);}
+  .mini-letter{background:var(--paper);border:2px solid var(--brass);}
+
+  /* ---------- right: proof area ---------- */
+  .proof-area{
+    padding:36px 30px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:22px;
+  }
+  .proof-sheet{
+    background:
+      linear-gradient(var(--panel-2) 1px, transparent 1px),
+      linear-gradient(90deg, var(--panel-2) 1px, transparent 1px);
+    background-size:22px 22px;
+    background-color:#19181700;
+    border:1px solid var(--line);
+    padding:60px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .reg-mark{position:absolute;width:16px;height:16px;color:var(--brass);}
+  .reg-mark::before,.reg-mark::after{content:'';position:absolute;background:currentColor;}
+  .reg-mark::before{width:100%;height:1px;top:50%;left:0;}
+  .reg-mark::after{width:1px;height:100%;left:50%;top:0;}
+  .reg-mark.tl{top:14px;left:14px;} .reg-mark.tr{top:14px;right:14px;}
+  .reg-mark.bl{bottom:14px;left:14px;} .reg-mark.br{bottom:14px;right:14px;}
+
+  .card-viewport{overflow:visible;}
+  .card-stage{
+    width:1050px;height:600px;
+    position:relative;
+    transform-origin:top left;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,.6);
+  }
+  .card-face{
+    width:1050px;height:600px;
+    position:absolute;top:0;left:0;
+    display:none;
+    overflow:hidden;
+  }
+  .card-face.active{display:block;}
+
+  .export-bar{display:flex;gap:12px;align-items:center;}
+  .btn-solid{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;letter-spacing:0.08em;text-transform:uppercase;
+    background:var(--red);color:#fff;border:1px solid var(--red);
+    padding:12px 20px;cursor:pointer;border-radius:2px;
+    transition:background .15s;
+  }
+  .btn-solid:hover{background:var(--red-dim);}
+  .btn-solid:disabled{opacity:.5;cursor:wait;}
+  .proof-note{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--text-lo);letter-spacing:.04em;}
+
+  /* ================= CARD FACE STYLES ================= */
+  .pv-photo{background-size:cover;background-position:center;}
+  .pv-mono{
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;
+  }
+
+  /* --- TEMPLATE 1: Minimal Ink --- */
+  .tpl-ink{background:var(--paper);color:var(--ink-text);}
+  .tpl-ink .t1-mark{
+    position:absolute;top:44px;left:50%;transform:translateX(-50%);
+    width:54px;height:54px;border-radius:50%;
+    border:1.5px solid var(--ink-text);
+    font-size:22px;font-weight:600;
+  }
+  .tpl-ink .t1-mark.pv-photo{border-color:var(--ink-text);}
+  .tpl-ink .t1-name{
+    position:absolute;top:150px;left:0;right:0;text-align:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:46px;
+  }
+  .tpl-ink .t1-rule{
+    position:absolute;top:230px;left:50%;transform:translateX(-50%);
+    width:120px;height:2px;background:var(--red);
+  }
+  .tpl-ink .t1-role{
+    position:absolute;top:250px;left:0;right:0;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:#5c5850;
+  }
+  .tpl-ink .t1-contact{
+    position:absolute;bottom:70px;left:0;right:0;
+    display:flex;justify-content:center;gap:30px;
+    font-family:'IBM Plex Mono',monospace;font-size:13px;
+  }
+  .tpl-ink .t1-social{
+    position:absolute;bottom:34px;left:0;right:0;
+    display:flex;justify-content:center;gap:14px;
+  }
+
+  /* --- TEMPLATE 2: Studio Grid --- */
+  .tpl-grid2{background:var(--paper);color:var(--ink-text);display:flex;}
+  .tpl-grid2 .t2-left{
+    width:38%;height:100%;background:var(--ink);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .tpl-grid2 .t2-photo{
+    width:150px;height:150px;border-radius:50%;
+    border:3px solid var(--brass);
+    font-size:56px;color:var(--paper);
+  }
+  .tpl-grid2 .t2-name{
+    color:var(--paper);font-family:'Fraunces',serif;font-size:26px;font-weight:600;
+    margin-top:20px;text-align:center;padding:0 20px;
+  }
+  .tpl-grid2 .t2-right{
+    width:62%;height:100%;padding:56px 46px;
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .tpl-grid2 .t2-role{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--red);margin-bottom:26px;
+  }
+  .tpl-grid2 .t2-row{
+    display:flex;gap:14px;align-items:baseline;margin-bottom:14px;
+    font-size:15px;
+  }
+  .tpl-grid2 .t2-row .lbl{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#8a8578;
+    width:70px;flex:none;text-transform:uppercase;letter-spacing:.08em;
+  }
+  .tpl-grid2 .t2-social{display:flex;gap:10px;margin-top:22px;}
+
+  /* --- TEMPLATE 3: Bold Block --- */
+  .tpl-block{background:var(--paper);color:var(--ink-text);display:flex;}
+  .tpl-block .t3-left{
+    width:56%;height:100%;padding:56px 44px;
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .tpl-block .t3-name{
+    font-family:'Fraunces',serif;font-weight:700;font-size:38px;line-height:1.05;margin-bottom:10px;
+  }
+  .tpl-block .t3-role{
+    font-family:'IBM Plex Mono',monospace;font-size:13px;letter-spacing:.06em;color:#5c5850;margin-bottom:28px;
+  }
+  .tpl-block .t3-contact{font-family:'IBM Plex Mono',monospace;font-size:12.5px;line-height:2;color:var(--ink-text);}
+  .tpl-block .t3-right{
+    width:44%;height:100%;background:var(--red);
+    position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .tpl-block .t3-photo{
+    width:130px;height:130px;border-radius:6px;
+    border:2px solid rgba(255,255,255,.5);
+    color:#fff;font-size:48px;
+  }
+  .tpl-block .t3-social{
+    position:absolute;bottom:30px;left:0;right:0;
+    display:flex;justify-content:center;gap:10px;
+  }
+  .tpl-block .t3-social .social-badge{border-color:rgba(255,255,255,.6);color:#fff;}
+
+  /* --- TEMPLATE 4: Classic Letterpress --- */
+  .tpl-letter{background:var(--paper);color:var(--ink-text);}
+  .tpl-letter .t4-border{
+    position:absolute;inset:22px;border:1.5px solid var(--ink-text);
+  }
+  .tpl-letter .t4-border::before{
+    content:'';position:absolute;inset:6px;border:0.5px solid var(--brass);
+  }
+  .tpl-letter .t4-photo{
+    position:absolute;top:56px;left:50%;transform:translateX(-50%);
+    width:96px;height:96px;border-radius:50%;
+    border:1.5px solid var(--brass);
+    font-size:36px;
+  }
+  .tpl-letter .t4-name{
+    position:absolute;top:178px;left:0;right:0;text-align:center;
+    font-family:'Fraunces',serif;font-weight:600;font-size:34px;letter-spacing:.02em;
+  }
+  .tpl-letter .t4-role{
+    position:absolute;top:224px;left:0;right:0;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;color:#5c5850;
+  }
+  .tpl-letter .t4-div{
+    position:absolute;top:270px;left:50%;transform:translateX(-50%);
+    display:flex;align-items:center;gap:8px;
+  }
+  .tpl-letter .t4-div span{width:5px;height:5px;background:var(--brass);border-radius:50%;}
+  .tpl-letter .t4-div i{width:40px;height:1px;background:var(--paper-line);display:block;}
+  .tpl-letter .t4-contact{
+    position:absolute;top:300px;left:0;right:0;text-align:center;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:2;color:var(--ink-text);
+  }
+  .tpl-letter .t4-social{
+    position:absolute;bottom:42px;left:0;right:0;
+    display:flex;justify-content:center;gap:12px;
+  }
+
+  .empty-hide{display:none !important;}
+</style>
+</head>
+<body>
+
+<div class="studio">
+  <header class="studio-header">
+    <div class="mark"><span>CP</span></div>
+    <h1>Card Press</h1>
+    <span class="tag">Digital Business Card Studio</span>
+  </header>
+
+  <div class="workspace">
+
+    <!-- ============ LEFT PANEL: FORM ============ -->
+    <aside class="panel">
+
+      <div class="field-group">
+        <h3>Identity</h3>
+        <div class="row photo-row">
+          <div class="photo-preview" id="photoPreview">—</div>
+          <button class="btn-ghost tiny" id="uploadBtn" type="button">Upload photo</button>
+          <button class="btn-ghost tiny" id="removeBtn" type="button">Remove</button>
+          <input type="file" id="photoInput" accept="image/*">
+        </div>
+        <div class="row">
+          <label>Full name</label>
+          <input type="text" id="fName" placeholder="Jordan Ade" value="Jordan Ade">
+        </div>
+        <div class="row two">
+          <div>
+            <label>Job title</label>
+            <input type="text" id="fTitle" placeholder="Product Designer" value="Product Designer">
+          </div>
+          <div>
+            <label>Company</label>
+            <input type="text" id="fCompany" placeholder="Fieldnote Studio" value="Fieldnote Studio">
+          </div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <h3>Contact</h3>
+        <div class="row">
+          <label>Email</label>
+          <input type="email" id="fEmail" placeholder="jordan@fieldnote.studio" value="jordan@fieldnote.studio">
+        </div>
+        <div class="row">
+          <label>Phone</label>
+          <input type="tel" id="fPhone" placeholder="+1 415 555 0148" value="+1 415 555 0148">
+        </div>
+        <div class="row">
+          <label>Website</label>
+          <input type="url" id="fWebsite" placeholder="fieldnote.studio" value="fieldnote.studio">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <h3>Social links</h3>
+        <div class="social-row">
+          <div class="social-badge">in</div>
+          <input type="text" id="sLinkedin" placeholder="linkedin.com/in/handle" value="in/jordanade">
+        </div>
+        <div class="social-row">
+          <div class="social-badge">X</div>
+          <input type="text" id="sTwitter" placeholder="@handle" value="@jordanade">
+        </div>
+        <div class="social-row">
+          <div class="social-badge">IG</div>
+          <input type="text" id="sInstagram" placeholder="@handle" value="@jordan.ade">
+        </div>
+        <div class="social-row">
+          <div class="social-badge">GH</div>
+          <input type="text" id="sGithub" placeholder="handle" value="jordanade">
+        </div>
+      </div>
+
+      <div class="field-group">
+        <h3>Template</h3>
+        <div class="tpl-grid">
+          <button class="tpl-swatch active" data-tpl="ink" type="button">
+            <div class="mini mini-ink"></div>
+            <div class="name">Minimal Ink</div>
+          </button>
+          <button class="tpl-swatch" data-tpl="grid2" type="button">
+            <div class="mini mini-grid"></div>
+            <div class="name">Studio Grid</div>
+          </button>
+          <button class="tpl-swatch" data-tpl="block" type="button">
+            <div class="mini mini-block"></div>
+            <div class="name">Bold Block</div>
+          </button>
+          <button class="tpl-swatch" data-tpl="letter" type="button">
+            <div class="mini mini-letter"></div>
+            <div class="name">Letterpress</div>
+          </button>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- ============ RIGHT: PROOF / PREVIEW ============ -->
+    <main class="proof-area">
+
+      <div class="proof-sheet" id="proofSheet">
+        <div class="reg-mark tl"></div><div class="reg-mark tr"></div>
+        <div class="reg-mark bl"></div><div class="reg-mark br"></div>
+
+        <div class="card-viewport">
+          <div class="card-stage" id="cardStage">
+
+            <!-- TEMPLATE 1: MINIMAL INK -->
+            <div class="card-face tpl-ink active" data-face="ink">
+              <div class="t1-mark pv-mono" id="ink-mono">JA</div>
+              <div class="t1-name" id="ink-name">Jordan Ade</div>
+              <div class="t1-rule"></div>
+              <div class="t1-role" id="ink-role">Product Designer · Fieldnote Studio</div>
+              <div class="t1-contact">
+                <span id="ink-email">jordan@fieldnote.studio</span>
+                <span id="ink-phone">+1 415 555 0148</span>
+                <span id="ink-web">fieldnote.studio</span>
+              </div>
+              <div class="t1-social" id="ink-social"></div>
+            </div>
+
+            <!-- TEMPLATE 2: STUDIO GRID -->
+            <div class="card-face tpl-grid2" data-face="grid2">
+              <div class="t2-left">
+                <div class="t2-photo pv-mono" id="grid-mono">JA</div>
+                <div class="t2-name" id="grid-name">Jordan Ade</div>
+              </div>
+              <div class="t2-right">
+                <div class="t2-role" id="grid-role">Product Designer — Fieldnote Studio</div>
+                <div class="t2-row"><span class="lbl">Email</span><span id="grid-email">jordan@fieldnote.studio</span></div>
+                <div class="t2-row"><span class="lbl">Phone</span><span id="grid-phone">+1 415 555 0148</span></div>
+                <div class="t2-row"><span class="lbl">Web</span><span id="grid-web">fieldnote.studio</span></div>
+                <div class="t2-social" id="grid-social"></div>
+              </div>
+            </div>
+
+            <!-- TEMPLATE 3: BOLD BLOCK -->
+            <div class="card-face tpl-block" data-face="block">
+              <div class="t3-left">
+                <div class="t3-name" id="block-name">Jordan<br>Ade</div>
+                <div class="t3-role" id="block-role">Product Designer, Fieldnote Studio</div>
+                <div class="t3-contact">
+                  <div id="block-email">jordan@fieldnote.studio</div>
+                  <div id="block-phone">+1 415 555 0148</div>
+                  <div id="block-web">fieldnote.studio</div>
+                </div>
+              </div>
+              <div class="t3-right">
+                <div class="t3-photo pv-mono" id="block-mono">JA</div>
+                <div class="t3-social" id="block-social"></div>
+              </div>
+            </div>
+
+            <!-- TEMPLATE 4: CLASSIC LETTERPRESS -->
+            <div class="card-face tpl-letter" data-face="letter">
+              <div class="t4-border"></div>
+              <div class="t4-photo pv-mono" id="letter-mono">JA</div>
+              <div class="t4-name" id="letter-name">Jordan Ade</div>
+              <div class="t4-role" id="letter-role">Product Designer · Fieldnote Studio</div>
+              <div class="t4-div"><i></i><span></span><i></i></div>
+              <div class="t4-contact">
+                <div id="letter-email">jordan@fieldnote.studio</div>
+                <div id="letter-contact2">+1 415 555 0148 · fieldnote.studio</div>
+              </div>
+              <div class="t4-social" id="letter-social"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button class="btn-solid" id="exportPng" type="button">Download PNG</button>
+        <button class="btn-solid" id="exportPdf" type="button">Download PDF</button>
+        <span class="proof-note" id="proofNote">Proof at 1050×600 · 300dpi · 3.5×2in</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    photo: null,
+    template: 'ink'
+  };
+
+  const fields = ['fName','fTitle','fCompany','fEmail','fPhone','fWebsite','sLinkedin','sTwitter','sInstagram','sGithub'];
+
+  function initials(name){
+    if(!name) return '?';
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if(parts.length === 0) return '?';
+    if(parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+    return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+  }
+
+  function socialBadge(kind, value, light){
+    if(!value) return '';
+    const label = {linkedin:'in',twitter:'X',instagram:'IG',github:'GH'}[kind];
+    return `<div class="social-badge" title="${value}">${label}</div>`;
+  }
+
+  function setMono(el, name, photo){
+    if(photo){
+      el.style.backgroundImage = `url(${photo})`;
+      el.classList.add('pv-photo');
+      el.textContent = '';
+    } else {
+      el.style.backgroundImage = 'none';
+      el.classList.remove('pv-photo');
+      el.textContent = initials(name);
+    }
+  }
+
+  function render(){
+    const name = $('fName').value.trim() || 'Your Name';
+    const title = $('fTitle').value.trim();
+    const company = $('fCompany').value.trim();
+    const email = $('fEmail').value.trim();
+    const phone = $('fPhone').value.trim();
+    const website = $('fWebsite').value.trim();
+    const li = $('sLinkedin').value.trim();
+    const tw = $('sTwitter').value.trim();
+    const ig = $('sInstagram').value.trim();
+    const gh = $('sGithub').value.trim();
+
+    const roleLine = [title, company].filter(Boolean).join(' · ');
+    const roleLineDash = [title, company].filter(Boolean).join(' — ');
+    const roleLineComma = [title, company].filter(Boolean).join(', ');
+
+    const socialsHTML = socialBadge('linkedin', li) + socialBadge('twitter', tw) + socialBadge('instagram', ig) + socialBadge('github', gh);
+
+    // Template 1: Minimal Ink
+    $('ink-name').textContent = name;
+    $('ink-role').textContent = roleLine || ' ';
+    $('ink-email').textContent = email;
+    $('ink-email').style.display = email ? '' : 'none';
+    $('ink-phone').textContent = phone;
+    $('ink-phone').style.display = phone ? '' : 'none';
+    $('ink-web').textContent = website;
+    $('ink-web').style.display = website ? '' : 'none';
+    $('ink-social').innerHTML = socialsHTML;
+    setMono($('ink-mono'), name, state.photo);
+
+    // Template 2: Studio Grid
+    $('grid-name').textContent = name;
+    $('grid-role').textContent = roleLineDash || ' ';
+    $('grid-email').textContent = email || '—';
+    $('grid-phone').textContent = phone || '—';
+    $('grid-web').textContent = website || '—';
+    $('grid-social').innerHTML = socialsHTML;
+    setMono($('grid-mono'), name, state.photo);
+
+    // Template 3: Bold Block
+    const nameParts = name.split(/\s+/);
+    $('block-name').innerHTML = nameParts.length > 1
+      ? nameParts.slice(0,-1).join(' ') + '<br>' + nameParts[nameParts.length-1]
+      : name;
+    $('block-role').textContent = roleLineComma || ' ';
+    $('block-email').textContent = email;
+    $('block-email').style.display = email ? '' : 'none';
+    $('block-phone').textContent = phone;
+    $('block-phone').style.display = phone ? '' : 'none';
+    $('block-web').textContent = website;
+    $('block-web').style.display = website ? '' : 'none';
+    $('block-social').innerHTML = socialsHTML;
+    setMono($('block-mono'), name, state.photo);
+
+    // Template 4: Letterpress
+    $('letter-name').textContent = name;
+    $('letter-role').textContent = roleLine || ' ';
+    $('letter-email').textContent = email || '';
+    $('letter-email').style.display = email ? '' : 'none';
+    const c2 = [phone, website].filter(Boolean).join(' · ');
+    $('letter-contact2').textContent = c2;
+    $('letter-contact2').style.display = c2 ? '' : 'none';
+    $('letter-social').innerHTML = socialsHTML;
+    setMono($('letter-mono'), name, state.photo);
+
+    $('photoPreview').style.backgroundImage = state.photo ? `url(${state.photo})` : 'none';
+    $('photoPreview').textContent = state.photo ? '' : initials(name);
+  }
+
+  fields.forEach(id => $(id).addEventListener('input', render));
+
+  // photo upload
+  $('uploadBtn').addEventListener('click', () => $('photoInput').click());
+  $('photoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      state.photo = ev.target.result;
+      render();
+    };
+    reader.readAsDataURL(file);
+  });
+  $('removeBtn').addEventListener('click', () => {
+    state.photo = null;
+    $('photoInput').value = '';
+    render();
+  });
+
+  // template switching
+  document.querySelectorAll('.tpl-swatch').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tpl-swatch').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.template = btn.dataset.tpl;
+      document.querySelectorAll('.card-face').forEach(f => f.classList.remove('active'));
+      document.querySelector(`.card-face[data-face="${state.template}"]`).classList.add('active');
+      fitStage();
+    });
+  });
+
+  // fit card stage to viewport
+  function fitStage(){
+    const sheet = $('proofSheet');
+    const stage = $('cardStage');
+    const maxW = Math.min(sheet.parentElement.clientWidth - 40, 900);
+    const scale = Math.min(1, maxW / 1050);
+    stage.style.transform = `scale(${scale})`;
+    const scaledW = 1050 * scale;
+    const scaledH = 600 * scale;
+    stage.parentElement.style.width = scaledW + 'px';
+    stage.parentElement.style.height = scaledH + 'px';
+  }
+  window.addEventListener('resize', fitStage);
+
+  // export helpers: render at full 1:1 scale off-transform for capture
+  async function captureCanvas(){
+    const stage = $('cardStage');
+    const prevTransform = stage.style.transform;
+    stage.style.transform = 'scale(1)';
+    stage.parentElement.style.width = '1050px';
+    stage.parentElement.style.height = '600px';
+    const activeFace = document.querySelector('.card-face.active');
+    const canvas = await html2canvas(activeFace, {
+      scale: 3,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false
+    });
+    stage.style.transform = prevTransform;
+    fitStage();
+    return canvas;
+  }
+
+  function fileSafeName(){
+    const name = $('fName').value.trim() || 'business-card';
+    return name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'business-card';
+  }
+
+  $('exportPng').addEventListener('click', async () => {
+    const btn = $('exportPng');
+    btn.disabled = true; btn.textContent = 'Rendering…';
+    try{
+      const canvas = await captureCanvas();
+      const link = document.createElement('a');
+      link.download = `${fileSafeName()}-card.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      btn.disabled = false; btn.textContent = 'Download PNG';
+    }
+  });
+
+  $('exportPdf').addEventListener('click', async () => {
+    const btn = $('exportPdf');
+    btn.disabled = true; btn.textContent = 'Rendering…';
+    try{
+      const canvas = await captureCanvas();
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'in', format: [3.5, 2] });
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, 3.5, 2);
+      pdf.save(`${fileSafeName()}-card.pdf`);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Download PDF';
+    }
+  });
+
+  render();
+  fitStage();
+})();
+</script>
+
+</body>
+</html>
