@@ -1,0 +1,6 @@
+interface:
+  display_name: "CARD PRESS"
+  short_description: "Repo-specific patterns and workflows for CARD-PRESS"
+  default_prompt: "Use the CARD-PRESS repo skill to follow existing architecture, testing, and workflow conventions."
+policy:
+  allow_implicit_invocation: true
