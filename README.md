@@ -26,10 +26,10 @@ No build step, no dependencies to install, no server required.
    git clone https://github.com/<your-username>/<your-repo>.git
    cd <your-repo>
    ```
-2. Open `card-press.html` directly in your browser (double-click it, or use a local server):
+2. Open the app directly in your browser (double-click `index.html` or `card-press.html`, or use a local server):
    ```bash
    python3 -m http.server 8000
-   # then visit http://localhost:8000/card-press.html
+   # then visit http://localhost:8000/
    ```
 
 ## Usage
@@ -52,9 +52,16 @@ No build step, no dependencies to install, no server required.
 
 ```
 .
+├── .github/workflows/deploy.yml  # GitHub Pages deployment workflow
 ├── card-press.html   # the entire app (markup, styles, logic)
+├── index.html        # redirect entrypoint for root hosting
 └── README.md
 ```
+
+## Deploy
+
+Push to `main` to trigger the included GitHub Pages workflow (`.github/workflows/deploy.yml`).
+After enabling GitHub Pages in repository settings, the app is served from the site root and redirects to `card-press.html`.
 
 ## License
 
